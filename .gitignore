@@ -104,6 +104,27 @@ modules/mali/DX910-SW-99002-r3p1-01rel1/driver/src/devicedrv/mali/Module.symvers
 modules/mali/DX910-SW-99002-r3p1-01rel1/driver/src/devicedrv/mali/arch
 modules/mali/DX910-SW-99002-r3p1-01rel1/driver/src/devicedrv/ump/Module.symvers
 modules/mali/DX910-SW-99002-r3p1-01rel1/driver/src/devicedrv/ump/arch
+checkopts
+daytimetcpcli
+daytimetcpsrv
+daytimetcpsrv1
+prdefaults
+rcvbuf
+rcvbufset
+sockopt
+tcpcli01
+tcpcli04
+tcpcli06
+tcpcli07
+tcpcli08
+tcpserv01
+tcpserv02
+tcpserv03
+tcpserv04
+tcpservselect01
+/arm_exe
+/intel_exe
+
 
 
 

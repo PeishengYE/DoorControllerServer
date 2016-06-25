@@ -1,5 +1,6 @@
-AR=ar
-CC=gcc
+ARM_TOOLCHAIN=arm-none-linux-gnueabi-
+AR=$(ARM_TOOLCHAIN)ar
+CC=$(ARM_TOOLCHAIN)gcc
 CFLAGS = -g -O -D_REENTRANT -Wall -D__EXTENSIONS__
 LIBS= lib/libunp.a -lresolv -lrt -lnsl -lpthread
 

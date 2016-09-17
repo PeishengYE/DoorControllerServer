@@ -1,12 +1,12 @@
 #include	"unp.h"
 #define DAYTIME 5018
-#define SOCKET_NUM (5018)
+#define SOCKET_NUM (5028)
 
 #define STR_GET_TEMP "get_temp"
 #define STR_GET_SWITCH_STATUS "get_switch"
 #define STR_SWITCH_ON "switch_on"
 #define STR_SWITCH_OFF "switch_off"
-
+#define OPEN_THE_DOOR "A412..&35?@!"
 
 int
 main(int argc, char **argv)
@@ -30,11 +30,12 @@ main(int argc, char **argv)
 	if (connect(sockfd, (SA *) &servaddr, sizeof(servaddr)) < 0)
 		err_sys("connect error");
 
-	n = write(sockfd, argv[2], strlen(argv[2]));
+	n = write(sockfd, OPEN_THE_DOOR, strlen(OPEN_THE_DOOR));
 	if( n < 0){
 		printf("write socket error");
 	}else{
 
+		printf("write socket OK");
 	}
 
 

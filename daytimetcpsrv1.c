@@ -5,7 +5,7 @@
 #include	<errno.h>
 #include	<unistd.h>
 
-#define SOCKET_NUM (5018)
+#define SOCKET_NUM (5028)
 
 #define POWER_OFF 0x55
 #define POWER_ON 0x88
@@ -33,6 +33,7 @@ static char* read_error2="error on reading 28-0416371170ff";
 #define BUF_SIZE (1024)
 
 #define STR_GET_TEMP "get_temp"
+#define OPEN_THE_DOOR "A412..&35?@!"
 #define STR_GET_SWITCH_STATUS "get_switch"
 #define STR_SWITCH_ON "switch_on"
 #define STR_SWITCH_OFF "switch_off"
@@ -41,6 +42,7 @@ static char* read_error2="error on reading 28-0416371170ff";
 #define GET_SWITCH_STATUS  (0x12)
 #define SWITCH_ON (0x13)
 #define SWITCH_OFF (0x14)
+#define	 SWITCH_DOOR (0x15)
 
 #define STR_STATUS_SWITCH_ON "switch is on"
 #define STR_STATUS_SWITCH_OFF "switch is off"
@@ -49,6 +51,12 @@ static char* read_error2="error on reading 28-0416371170ff";
 #define SWITCH_STATUS_FILE_ON "on"
 #define SWITCH_STATUS_FILE_OFF "off"
 #define ERROR_ON_OPEN_SWITCH_STATUS_FILE "error on opening /dev/heater_status"
+enum tag_DISP_CMD{
+
+    DISP_CMD_LCD_ON = 0x140,
+    DISP_CMD_LCD_OFF = 0x141,
+    DISP_CMD_LCD_ON_CONFIRM = 0x14f
+}__disp_cmd_t;
 
 static void read_switch_status_file(char *buf)
 {
@@ -281,6 +289,9 @@ static int  analysis_cmd(char *cmd)
 
 	}else if(!(strcmp(cmd, STR_SWITCH_OFF))){
 		return SWITCH_OFF;
+	}else if(!(strcmp(cmd, OPEN_THE_DOOR))){
+		return SWITCH_DOOR;
+
 	}else{
 
 		return -1;
@@ -288,6 +299,56 @@ static int  analysis_cmd(char *cmd)
 
 }
 
+/* this use A13 backlight to control the 24V relay */
+
+static int disp_on()
+{
+	int disphd;
+	int arg[4];
+
+	if((disphd = open("/dev/disp",O_RDWR)) == -1)
+	{
+		printf("open file /dev/disp fail. \n");
+		return -1;
+	}
+
+    arg[0] = 0;
+	printf("enable the backlight \n");
+    ioctl(disphd, DISP_CMD_LCD_ON_CONFIRM, (void*)arg);
+    ioctl(disphd, DISP_CMD_LCD_ON, (void*)arg);
+	close(disphd);
+	return 0;
+}
+
+static int disp_off()
+{
+	int disphd;
+	int arg[4];
+
+	if((disphd = open("/dev/disp",O_RDWR)) == -1)
+	{
+		printf("open file /dev/disp fail. \n");
+		return -1;
+	}
+
+    arg[0] = 0;
+	printf("disable the backlight \n");
+    ioctl(disphd, DISP_CMD_LCD_OFF, (void*)arg);
+	close(disphd);
+	return 0;
+}
+
+
+
+static void switch_door_status()
+{
+	disp_off();
+	sleep(1);
+    disp_on();
+	sleep(2);
+	disp_off();
+
+}
 
 static void make_action(int cmd)
 {
@@ -303,6 +364,9 @@ static void make_action(int cmd)
 		   break;
        case SWITCH_OFF:
            change_switch_status(POWER_OFF);
+		   break;
+       case SWITCH_DOOR:
+           switch_door_status();
 		   break;
 	   default:
 		printf(" error on reading cmd\n");

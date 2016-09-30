@@ -122,6 +122,7 @@ tcpserv02
 tcpserv03
 tcpserv04
 tcpservselect01
+controller
 /arm_exe
 /intel_exe
 /bin

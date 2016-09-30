@@ -7,13 +7,15 @@ LIBS= lib/libunp.a -lresolv -lrt -lnsl -lpthread
 export AR CC CFLAGS 
 
 LIBDIRS=lib
+OUTPUT_DIRS=bin
+
 TCPSERV = tcpserv01 tcpserv02 tcpserv03 tcpserv04
 TCPCLI = tcpcli01 tcpcli04
 SELECT = tcpcli06 tcpcli07 tcpcli08 tcpservselect01 
 
 SO =	checkopts prdefaults rcvbuf rcvbufset sockopt
 
-PROGS=daytimetcpcli daytimetcpsrv daytimetcpsrv1  controller $(TCPSERV) $(TCPCLI) $(SELECT) $(SO)
+PROGS= controller 
     
     
 all:$(LIBDIRS)	$(PROGS)
@@ -31,68 +33,7 @@ distclean: clean
 	@rm -f $(PROGS)
 
 
-file_cli_yep:	file_cli_yep.o
-	${CC} ${CFLAGS} -o $@ daytimetcpcli.o ${LIBS}
 
-file_svr_yep:	file_svr_yep.o
-	${CC} ${CFLAGS} -o $@ daytimetcpcli.o ${LIBS}
-
-daytimetcpcli:	daytimetcpcli.o
-	${CC} ${CFLAGS} -o $@ daytimetcpcli.o ${LIBS}
-
-daytimetcpsrv:	daytimetcpsrv.o
-	${CC} ${CFLAGS} -o $@ daytimetcpsrv.o ${LIBS}
 controller:	controller.o
 	${CC} ${CFLAGS} -o $@ controller.o ${LIBS}
 
-daytimetcpsrv1:	daytimetcpsrv1.o
-	${CC} ${CFLAGS} -o $@ daytimetcpsrv1.o ${LIBS}
-
-tcpserv01:	tcpserv01.o
-	${CC} ${CFLAGS} -o $@ tcpserv01.o ${LIBS}
-tcpcli01:	tcpcli01.o
-	${CC} ${CFLAGS} -o $@ tcpcli01.o ${LIBS}
-
-tcpcli04:	tcpcli04.o
-	${CC} ${CFLAGS} -o $@ tcpcli04.o ${LIBS}
-
-tcpserv02:	tcpserv02.o sigchldwait.o
-		${CC} ${CFLAGS} -o $@ tcpserv02.o sigchldwait.o ${LIBS}
-
-tcpserv03:	tcpserv03.o sigchldwait.o
-		${CC} ${CFLAGS} -o $@ tcpserv03.o sigchldwait.o ${LIBS}
-
-tcpserv04:	tcpserv04.o sigchldwaitpid.o
-		${CC} ${CFLAGS} -o $@ tcpserv04.o sigchldwaitpid.o ${LIBS}
-
-
-sockopt:	sockopt.o
-		${CC} ${CFLAGS} -o $@ sockopt.o ${LIBS}
-
-checkopts:	checkopts.o
-		${CC} ${CFLAGS} -o $@ checkopts.o ${LIBS}
-
-prdefaults:	prdefaults.o
-		${CC} ${CFLAGS} -o $@ prdefaults.o ${LIBS}
-
-rcvbuf:	rcvbuf.o
-		${CC} ${CFLAGS} -o $@ rcvbuf.o ${LIBS}
-
-rcvbufset:	rcvbufset.o
-		${CC} ${CFLAGS} -o $@ rcvbufset.o ${LIBS}
-
-
-tcpcli06:	tcpcli06.o strcliselect01.o
-		${CC} ${CFLAGS} -o $@ tcpcli06.o strcliselect01.o ${LIBS}
-
-tcpcli07:	tcpcli07.o strcliselect02.o
-		${CC} ${CFLAGS} -o $@ tcpcli07.o strcliselect02.o ${LIBS}
-
-tcpcli08:	tcpcli08.o
-		${CC} ${CFLAGS} -o $@ tcpcli08.o ${LIBS}
-
-tcpservselect01:	tcpservselect01.o
-		${CC} ${CFLAGS} -o $@ tcpservselect01.o ${LIBS}
-
-
-clean:

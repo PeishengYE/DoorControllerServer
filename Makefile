@@ -1,5 +1,6 @@
-AR=ar
-CC=gcc
+ARM_TOOLCHAIN=arm-none-linux-gnueabi-
+AR=$(ARM_TOOLCHAIN)ar
+CC=$(ARM_TOOLCHAIN)gcc
 CFLAGS = -g -O -D_REENTRANT -Wall -D__EXTENSIONS__
 LIBS= lib/libunp.a -lresolv -lrt -lnsl -lpthread
 
@@ -12,7 +13,7 @@ SELECT = tcpcli06 tcpcli07 tcpcli08 tcpservselect01
 
 SO =	checkopts prdefaults rcvbuf rcvbufset sockopt
 
-PROGS=daytimetcpcli daytimetcpsrv daytimetcpsrv1 $(TCPSERV) $(TCPCLI) $(SELECT) $(SO)
+PROGS=daytimetcpcli daytimetcpsrv daytimetcpsrv1  controller $(TCPSERV) $(TCPCLI) $(SELECT) $(SO)
     
     
 all:$(LIBDIRS)	$(PROGS)
@@ -41,6 +42,8 @@ daytimetcpcli:	daytimetcpcli.o
 
 daytimetcpsrv:	daytimetcpsrv.o
 	${CC} ${CFLAGS} -o $@ daytimetcpsrv.o ${LIBS}
+controller:	controller.o
+	${CC} ${CFLAGS} -o $@ controller.o ${LIBS}
 
 daytimetcpsrv1:	daytimetcpsrv1.o
 	${CC} ${CFLAGS} -o $@ daytimetcpsrv1.o ${LIBS}

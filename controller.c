@@ -33,6 +33,9 @@ static char* read_error2="error on reading 28-0416371170ff";
 #define BUF_SIZE (1024)
 
 #define STR_GET_TEMP "get_temp"
+#define PING_THE_DOOR "78*(^@/uid"
+#define ACKNOWLEDGE_PING "^3234adsfa/?"
+/* cmd used to check if the door controller is alive */
 #define OPEN_THE_DOOR "A412..&35?@!"
 #define ACKNOWLEDGE_THE_DOOR "B835??/!xx"
 #define STR_GET_SWITCH_STATUS "get_switch"
@@ -44,6 +47,8 @@ static char* read_error2="error on reading 28-0416371170ff";
 #define SWITCH_ON (0x13)
 #define SWITCH_OFF (0x14)
 #define	 SWITCH_DOOR (0x15)
+/* */
+#define	 PING_DOOR (0x16)
 
 #define STR_STATUS_SWITCH_ON "switch is on"
 #define STR_STATUS_SWITCH_OFF "switch is off"
@@ -293,6 +298,9 @@ static int  analysis_cmd(char *cmd)
 	}else if(!(strcmp(cmd, OPEN_THE_DOOR))){
 		return SWITCH_DOOR;
 
+	}else if(!(strcmp(cmd, PING_THE_DOOR))){
+		return PING_DOOR;
+
 	}else{
 
 		return -1;
@@ -339,6 +347,13 @@ static int disp_off()
 	return 0;
 }
 
+static void return_ping()
+{
+
+	char * reply =  ACKNOWLEDGE_PING; 
+	printf("return_ping()>> Got Ping Packet, replying with acknowledge packet \n");
+    Write(connected_socket, reply, strlen(reply));
+}
 
 
 static void switch_door_status()
@@ -370,6 +385,9 @@ static void make_action(int cmd)
 		   break;
        case SWITCH_DOOR:
            switch_door_status();
+		   break;
+       case PING_DOOR:
+           return_ping();
 		   break;
 	   default:
 		printf(" error on reading cmd\n");

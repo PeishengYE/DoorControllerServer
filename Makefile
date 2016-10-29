@@ -8,7 +8,7 @@ export AR CC CFLAGS
 
 LIBDIRS=lib
 TCPSERV = tcpserv01 tcpserv02 tcpserv03 tcpserv04
-TCPCLI = tcpcli01 tcpcli04
+TCPCLI = tcpcli01 tcpcli04 jpeg_convert_sending
 SELECT = tcpcli06 tcpcli07 tcpcli08 tcpservselect01 
 
 SO =	checkopts prdefaults rcvbuf rcvbufset sockopt
@@ -88,6 +88,9 @@ tcpcli07:	tcpcli07.o strcliselect02.o
 
 tcpcli08:	tcpcli08.o
 		${CC} ${CFLAGS} -o $@ tcpcli08.o ${LIBS}
+
+jpeg_convert_sending:	jpeg_convert_sending.o
+		${CC} ${CFLAGS} -o $@ jpeg_convert_sending.o ${LIBS}
 
 tcpservselect01:	tcpservselect01.o
 		${CC} ${CFLAGS} -o $@ tcpservselect01.o ${LIBS}

@@ -3,6 +3,7 @@
 
 #define CMD_CONVERT "/usr/bin/convert ./input.jpg -resize %20 output.jpg"
 #define OUTPUT_FILE "output.jpg"
+#define SERVER_PORT  8099
 
 static int system_with_fork(const char *cmdstring)	/* version without signal handling */
 {
@@ -80,7 +81,7 @@ static void sending_image(int sockfd )
 	}
 
 }
-#define SERVER_PORT  8099
+
 int
 main(int argc, char **argv)
 {

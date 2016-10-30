@@ -329,7 +329,16 @@ static void  read_cmd_and_make_action()
      make_action(cmd_internal);
 
 }
+static void
+sig_chld_yep(int signo)
+{
+	pid_t	pid;
+	int		stat;
 
+	while ( (pid = waitpid(-1, &stat, WNOHANG)) > 0)
+		printf("child %d terminated\n", pid);
+	return;
+}
 
 int
 main(int argc, char **argv)
@@ -338,8 +347,9 @@ main(int argc, char **argv)
 	socklen_t			len;
 	struct sockaddr_in	servaddr, cliaddr;
 	char				buff[MAXLINE];
-    a13_daemon_init();
+	pid_t				childpid;
 
+    a13_daemon_init();
 	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
 
 	bzero(&servaddr, sizeof(servaddr));
@@ -350,11 +360,11 @@ main(int argc, char **argv)
 	Bind(listenfd, (SA *) &servaddr, sizeof(servaddr));
 
 	Listen(listenfd, LISTENQ);
-	Signal(SIGCHLD, sig_chld);	
+	Signal(SIGCHLD, sig_chld_yep);	
 	for ( ; ; ) {
 
-		clilen = sizeof(cliaddr);
-		if ( (connfd = accept(listenfd, (SA *) &cliaddr, &clilen)) < 0) {
+		len = sizeof(cliaddr);
+		if ( (connfd = accept(listenfd, (SA *) &cliaddr, &len)) < 0) {
 			if (errno == EINTR)
 				continue;		/* back to for() */
 			else
@@ -363,6 +373,7 @@ main(int argc, char **argv)
 
 		if ( (childpid = Fork()) == 0) {	/* child process */
 			Close(listenfd);	/* close listening socket */
+			connected_socket = connfd;
             read_cmd_and_make_action();
 			exit(0);
 		}

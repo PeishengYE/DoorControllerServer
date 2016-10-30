@@ -38,7 +38,7 @@ static void sending_image(int sockfd )
 {
 	FILE *fp;
 	char buf[BUF_SIZE];
-	int rest, number_object, file_size;
+	int rest, remain_size,number_object, file_size;
 
 	if((fp = fopen(OUTPUT_FILE ,"r")) == NULL){
 		printf("fopen error");
@@ -53,32 +53,30 @@ static void sending_image(int sockfd )
 	if((file_size = ftell(fp)) == 1L)
 		printf("ftell error");
 
-	printf("file_size  = 0x%x\n",file_size);
+	printf("\nfile_size  = %d\n",file_size);
 
 
 	/* how many objects we have */
 	rest = file_size % BUF_SIZE;
     number_object = file_size/BUF_SIZE;
 
-	printf("number of object  = 0x%x\n",number_object);
-	printf("rest of byte  = 0x%x\n",rest);
+	printf("number of object  = %d\n",number_object);
+	printf("rest of byte  = %d\n",rest);
 
 	/* write the objects */
 	rewind(fp);
 
-	//buf_read = rand()%100;
-	while((fread(buf,BUF_SIZE,1,fp)) == 1){
+	while((remain_size = fread(buf,1,BUF_SIZE,fp)) == BUF_SIZE){
 			Writen(sockfd, buf, BUF_SIZE);
+	        printf("sending = %d\n",BUF_SIZE);
 
 	}
 
 	/* write the rest data */
+     Writen(sockfd, buf, remain_size);
+	 printf("last sending = %d\n",remain_size);
 
-	if((fread(buf,rest,1,fp)) != 1){
-		printf("fread2 error");
-	}else{
-         Writen(sockfd, buf, rest);
-	}
+	fclose(fp);
 
 }
 

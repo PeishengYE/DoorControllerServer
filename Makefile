@@ -13,7 +13,7 @@ SELECT = tcpcli06 tcpcli07 tcpcli08 tcpservselect01
 
 SO =	checkopts prdefaults rcvbuf rcvbufset sockopt
 
-PROGS=daytimetcpcli daytimetcpsrv daytimetcpsrv1 $(TCPSERV) $(TCPCLI) $(SELECT) $(SO)
+PROGS=heater_tank_controller daytimetcpcli daytimetcpsrv daytimetcpsrv1 $(TCPSERV) $(TCPCLI) $(SELECT) $(SO)
     
     
 all:$(LIBDIRS)	$(PROGS)
@@ -63,6 +63,8 @@ tcpserv03:	tcpserv03.o sigchldwait.o
 tcpserv04:	tcpserv04.o sigchldwaitpid.o
 		${CC} ${CFLAGS} -o $@ tcpserv04.o sigchldwaitpid.o ${LIBS}
 
+heater_tank_controller:	heater_tank_controller.o
+	${CC} ${CFLAGS} -o $@ heater_tank_controller.o ${LIBS}
 
 sockopt:	sockopt.o
 		${CC} ${CFLAGS} -o $@ sockopt.o ${LIBS}

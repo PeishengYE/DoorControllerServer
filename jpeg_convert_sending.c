@@ -45,10 +45,12 @@ static void sending_image(int sockfd )
 		return;
 	}
 
+	/*****************************/
+	/*** YOU CAN DELETE HERE******/
+	/*****************************/
 	/* the end position */
 	if(fseek(fp,0,SEEK_END) != 0)
 		printf("fopen error");
-
 
 	if((file_size = ftell(fp)) == 1L)
 		printf("ftell error");
@@ -56,15 +58,21 @@ static void sending_image(int sockfd )
 	printf("\nfile_size  = %d\n",file_size);
 
 
-	/* how many objects we have */
 	rest = file_size % BUF_SIZE;
     number_object = file_size/BUF_SIZE;
 
 	printf("number of object  = %d\n",number_object);
 	printf("rest of byte  = %d\n",rest);
-
-	/* write the objects */
 	rewind(fp);
+	/*****************************/
+	/*** END YOU CAN DELETE HERE******/
+	/*****************************/
+
+	/* 
+	 * 
+	 * write the objects, for file reading, we should use 
+	 * ONE byte object 
+	 * */
 
 	while((remain_size = fread(buf,1,BUF_SIZE,fp)) == BUF_SIZE){
 			Writen(sockfd, buf, BUF_SIZE);

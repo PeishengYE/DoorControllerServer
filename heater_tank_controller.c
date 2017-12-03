@@ -10,25 +10,19 @@
 #define POWER_OFF 0x55
 #define POWER_ON 0x88
 static int current_status = POWER_OFF;
-//static char* power_off_a13= "/sbin/rmmod sun4i_vibrator";
-//static char* power_on_a13 =	"/sbin/insmod /lib/modules/3.0.8+/sun4i-vibrator.ko"; 
 
 static int connected_socket = -1;
 static char temp_result[2048];
-#define STR_SENSOR_1 "TMP1: "
-#define STR_SENSOR_2 "TMP2: "
+#define STR_SENSOR "Water Tank Temp: "
 
-static char* power_off_a13= "/root/light_off.sh";
-static char* power_on_a13 =	"/root/light_on.sh"; 
 
-#define TEST_FILE  "/root/loop.sh"
-static char* tmp1="/sys/bus/w1/drivers/w1_slave_driver/28-0416371170ff/w1_slave";
-static char* tmp2="/sys/bus/w1/drivers/w1_slave_driver/28-0416380a7aff//w1_slave";
-static char* open_error1="error on opening 28-0416380a7aff";
-static char* open_error2="error on opening 28-0416371170ff";
+static char* sensor="/sys/bus/w1/drivers/w1_slave_driver/28-04163711deff/w1_slave";
+static int saved_temperature;
+static char saved_temperature_str[10];
 
-static char* read_error1="error on reading 28-0416380a7aff";
-static char* read_error2="error on reading 28-0416371170ff";
+#define CMD_ON "8"
+#define CMD_OFF "0"
+
 
 #define BUF_SIZE (1024)
 
@@ -45,17 +39,18 @@ static char* read_error2="error on reading 28-0416371170ff";
 #define STR_STATUS_SWITCH_ON "switch is on"
 #define STR_STATUS_SWITCH_OFF "switch is off"
 
-#define SWITCH_STATUS_FILE "/dev/heater_status"
-#define SWITCH_STATUS_FILE_ON "on"
-#define SWITCH_STATUS_FILE_OFF "off"
-#define ERROR_ON_OPEN_SWITCH_STATUS_FILE "error on opening /dev/heater_status"
+#define STR_GPIO_SWITCH "/proc/driver/yep_gpio/GPIO_PG9"
+#define STR_GPIO_SWITCH_ON "PG9 : 1"
+#define STR_GPIO_SWITCH_OFF "PG9 : 0"
+#define ERROR_ON_OPEN_SWITCH_STATUS_FILE "error on openning GPIO PG9"
 
-static void read_switch_status_file(char *buf)
+
+static void read_switch_gpio_file(char *buf)
 {
 
 	int fp;
 	int read_length;
-	fp = open(SWITCH_STATUS_FILE, O_RDONLY);
+	fp = open(STR_GPIO_SWITCH, O_RDONLY);
 	if (fp<0){
 		strcpy(buf, ERROR_ON_OPEN_SWITCH_STATUS_FILE);
 		return;
@@ -63,28 +58,40 @@ static void read_switch_status_file(char *buf)
     printf("read_status file...\n");
 	read_length = read(fp, buf, BUF_SIZE);
 	if(read_length  < 0 ){
-		strcpy(buf, read_error2);
 		return;
 	}
 	if(fp >0 )
 	  close(fp);
 }
 
+static void write_switch_gpio_file(char *buf)
+{
+
+	int fp;
+	fp = open(STR_GPIO_SWITCH, O_WRONLY);
+	if (fp<0){
+        printf("write_switch_gpio_file()>> Error on openning GPIO file...\n");
+		return;
+	}
+    printf("write_switch_gpio_file()>> writing GPIO file...\n");
+	write(fp, buf, (strlen(buf)+1) );
+	close(fp);
+}
 
 static void get_switch_status_write_socket()
 {
 	char buf[BUF_SIZE];
 	memset(buf, 0, BUF_SIZE);
-    read_switch_status_file(buf);
+    read_switch_gpio_file(buf);
 	char *result;
 
-    printf("get_switch_status_write_socket()>> read status file return:  %s \n", buf);
+    printf("get_switch_status_write_socket()>> read GPIO file GPIO_PG9 return:  %s \n", buf);
 
-	if(!(strncmp(buf,SWITCH_STATUS_FILE_ON, 2))){
+	if(!(strncmp(buf,STR_GPIO_SWITCH_ON, 7))){
         printf("get_switch_status_write_socket()>> switch on \n");
 		result = STR_STATUS_SWITCH_ON;
 
-	}else if(!(strncmp(buf, SWITCH_STATUS_FILE_OFF, 3))){
+	}else if(!(strncmp(buf, STR_GPIO_SWITCH_OFF, 7))){
         printf("get_switch_status_write_socket()>> switch off \n");
 		result = STR_STATUS_SWITCH_OFF;
 
@@ -98,45 +105,65 @@ static void get_switch_status_write_socket()
 }
 
 
-static void read_temperature_1(char *buf)
+static void read_temperature(char *buf)
 {
 
 	int fp;
 	int read_length;
-	fp = open(tmp1, O_RDONLY);
+	fp = open(sensor, O_RDONLY);
 	if (fp<0){
-		strcpy(buf, open_error1);
+		//strcpy(buf, open_error1);
 		return;
 	}
-    printf("read_temperature_1() read ...\n");
+    printf("read_sensor() ...\n");
 	read_length = read(fp, buf, BUF_SIZE);
 	if(read_length  < 0 ){
-		strcpy(buf, read_error1);
 		return;
 	}
 	if(fp >0 )
 	   close(fp);
 }
 
-static void read_temperature_2(char *buf)
+static void check_temperature_value(char *buf)
 {
+	char OK_STR[10] = "YES";
+	//char NO_STR[10] = "NO";
+	char TAG_STR[10] = "t=";
+	char tmp[10] ;
+	char * num;
+	char *ret;
+	int dec = 0, i, len;
 
-	int fp;
-	int read_length;
-	fp = open(tmp2, O_RDONLY);
-	if (fp<0){
-		strcpy(buf, open_error2);
-		return;
-	}
-    printf("read_temperature_2() read ...\n");
-	read_length = read(fp, buf, BUF_SIZE);
-	if(read_length  < 0 ){
-		strcpy(buf, read_error2);
-		return;
-	}
-	if(fp >0 )
-	  close(fp);
+	
+	printf("check_temperature_value(()>>  string :\n%s\n", buf);
+	ret = strstr(buf, OK_STR);
+	if(ret != NULL){
+	    ret = strstr(buf, TAG_STR);
+	    printf("check_temperature_value(()>> temp :%s\n", ret);
+
+		/* copy only the 5 character about number */
+		memset(tmp, 0, sizeof(tmp));
+		strncpy(tmp, ret+2, 5);
+
+		num = tmp;
+		len = strlen(num);
+		for(i=0; i<len; i++){
+			dec = dec * 10 + ( num[i] - '0' );
+		}
+
+	    printf("check_temperature_value(()>> temp: %d\n", dec);
+
+		/* only choice the temperatur from 4 degree to 100 degree */
+		if((dec > 4000)&&(dec < 100000)){
+
+            saved_temperature = dec;
+			memset(saved_temperature_str, 0, sizeof(saved_temperature_str));
+			strcpy(saved_temperature_str, tmp);
+		}
+    }
+
 }
+
 
 
 int a13_daemon_init(void)
@@ -161,7 +188,6 @@ int a13_daemon_init(void)
 
 static int a13_system_call(const char *cmdstring)	/* version without signal handling */
 {
-	pid_t	pid;
 	int		status = 0;
 	printf("a13_system_call()>>   on cmd :%s\n", cmdstring);
 
@@ -211,41 +237,59 @@ static int system_with_fork(const char *cmdstring)	/* version without signal han
 
 static void read_temp_write_socket()
 {
-	char buf[BUF_SIZE];
-	memset(temp_result, 0, 2048);
+   memset(temp_result, 0, 2048);
 
+   strcat(temp_result, STR_SENSOR);
+   strcat(temp_result, saved_temperature_str);
 
-   printf("reading from sensor 1..\n");
-   memset(buf, 0, BUF_SIZE);
-   read_temperature_1(buf);
-   strcat(temp_result, STR_SENSOR_1);
-   strcat(temp_result, buf);
-
-
-   printf("reading from sensor 2..\n");
-   memset(buf, 0, BUF_SIZE);
-   read_temperature_2(buf);
-   strcat(temp_result, STR_SENSOR_2);
-   strcat(temp_result, buf);
 
    Write(connected_socket, temp_result, strlen(temp_result));
 }
 
+static void  read_temperature_local_internal()
+{
+	char value[256] ;
+
+	while(1){
+		memset(value, 0, sizeof(value));
+
+		read_temperature(value);
+		check_temperature_value(value);
+		sleep(1);
+
+	}
+
+}
+/* YEP inside */
+static void read_temperature_local()
+{
+	    pid_t	childpid;
+
+		if ( (childpid = Fork()) == 0) {	/* child process */
+           read_temperature_local_internal();
+		}
+}
 
 static void change_switch_status(int required)
 {
 	char *result;
+	char tmp[100];
+	memset(tmp, 0, sizeof(tmp));
+
 	if(required == POWER_ON){
 		printf("change_switch_status()>>  power_on\n ");
+		strcpy(tmp, CMD_ON);
+        write_switch_gpio_file(tmp);
+
 		result = STR_STATUS_SWITCH_ON;
-		//a13_system_call(power_on_a13);
-		system_with_fork(power_on_a13);
         Write(connected_socket, result, strlen(result));
 
 	}else{
 		printf("change_switch_status()>>  power_off\n ");
+		strcpy(tmp, CMD_OFF);
+        write_switch_gpio_file(tmp);
+
 		result = STR_STATUS_SWITCH_OFF;
-		system_with_fork(power_off_a13);
         Write(connected_socket, result, strlen(result));
 
 	}
@@ -321,7 +365,6 @@ static void  read_cmd_and_make_action()
     read_size = read(connected_socket, buff, 79);
 	if(read_size <=0){
 		printf("read cmd error from connected_socket\n");
-		return -1;
 	}
 
     cmd_internal =  analysis_cmd(buff);
@@ -346,7 +389,6 @@ main(int argc, char **argv)
 	int					listenfd, connfd;
 	socklen_t			len;
 	struct sockaddr_in	servaddr, cliaddr;
-	char				buff[MAXLINE];
 	pid_t				childpid;
 
     a13_daemon_init();
@@ -361,6 +403,7 @@ main(int argc, char **argv)
 
 	Listen(listenfd, LISTENQ);
 	Signal(SIGCHLD, sig_chld_yep);	
+    read_temperature_local();
 	for ( ; ; ) {
 
 		len = sizeof(cliaddr);
@@ -381,29 +424,4 @@ main(int argc, char **argv)
 	}
 
 
-
-		/*
-		len = sizeof(cliaddr);
-		connfd = Accept(listenfd, (SA *) &cliaddr, &len);
-		printf("connection from %s, port %d\n",
-			   Inet_ntop(AF_INET, &cliaddr.sin_addr, buff, sizeof(buff)),
-			   ntohs(cliaddr.sin_port));
-
-		connected_socket = connfd;
-
-        ticks = time(NULL);
-        status = change_status();
-
-		if(status == POWER_ON){
-
-          snprintf(buff, sizeof(buff), "POWER ON %.24s\r\n", ctime(&ticks));
-		}else{
-          snprintf(buff, sizeof(buff), "POWER OFF %.24s\r\n", ctime(&ticks));
-
-		}
-        Write(connfd, buff, strlen(buff));
-
-		Close(connfd);
-	}
-		*/
 }

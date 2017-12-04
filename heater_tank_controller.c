@@ -4,6 +4,7 @@
 #include	<sys/wait.h>
 #include	<errno.h>
 #include	<unistd.h>
+#include <semaphore.h>
 
 #define SOCKET_NUM (5018)
 
@@ -12,7 +13,7 @@
 static int current_status = POWER_OFF;
 
 static int connected_socket = -1;
-static char temp_result[2048];
+static char temp_result[512];
 #define STR_SENSOR "Water Tank Temp: "
 
 
@@ -43,6 +44,45 @@ static char saved_temperature_str[10];
 #define STR_GPIO_SWITCH_ON "PG9 : 1"
 #define STR_GPIO_SWITCH_OFF "PG9 : 0"
 #define ERROR_ON_OPEN_SWITCH_STATUS_FILE "error on openning GPIO PG9"
+
+#define  TMP_TEMPERATURE_FILE "/dev/temperature_sensor"
+
+static void read_saved_temperarture_file(char *buf)
+{
+
+	int fp;
+	int read_length;
+	fp = open(TMP_TEMPERATURE_FILE, O_RDONLY);
+	if (fp<0){
+		strcpy(buf, ERROR_ON_OPEN_SWITCH_STATUS_FILE);
+		return;
+	}
+    printf("read temperature file...\n");
+	read_length = read(fp, buf, 5);
+	if(read_length  < 0 ){
+        printf("Error on reading temperature file...\n");
+		return;
+	}
+    printf("read temperature file: saved buffer: %s\n", buf);
+	if(fp >0 )
+	  close(fp);
+}
+
+static void write_saved_temperature_file(char *buf)
+{
+
+	int fp, num_writing;
+	fp = open(TMP_TEMPERATURE_FILE, O_RDWR);
+	if (fp<0){
+        printf("write_saved_temperature_file()>> Error on openning temperature file...\n");
+		return;
+	}
+    printf("write_saved_temperature_file()>> writing on openning temperature file: %s...\n", buf);
+	num_writing = write(fp, buf, 6);
+	if(num_writing == -1)
+        printf("write_saved_temperature_file()>> Error on writing temperature file\n");
+	close(fp);
+}
 
 
 static void read_switch_gpio_file(char *buf)
@@ -156,10 +196,15 @@ static void check_temperature_value(char *buf)
 		/* only choice the temperatur from 4 degree to 100 degree */
 		if((dec > 4000)&&(dec < 100000)){
 
+	        printf("check_temperature_value(()>>OK \n");
             saved_temperature = dec;
 			memset(saved_temperature_str, 0, sizeof(saved_temperature_str));
-			strcpy(saved_temperature_str, tmp);
+			strcpy(saved_temperature_str, num);
+
+            write_saved_temperature_file(saved_temperature_str);
+
 		}
+	    printf("check_temperature_value(()>> saved_temperature_str: %s\n", saved_temperature_str);
     }
 
 }
@@ -237,13 +282,20 @@ static int system_with_fork(const char *cmdstring)	/* version without signal han
 
 static void read_temp_write_socket()
 {
-   memset(temp_result, 0, 2048);
+   char tmp[512];
+   memset(temp_result, 0, sizeof(temp_result));
+   memset(tmp, 0, sizeof(tmp));
 
-   strcat(temp_result, STR_SENSOR);
-   strcat(temp_result, saved_temperature_str);
+   read_saved_temperarture_file(tmp);
+   printf("read_temp_write_socket()>> temp saved value: %s\n", tmp);
+
+   strcpy(temp_result, STR_SENSOR);
+   strcat(temp_result, tmp);
+   printf("read_temp_write_socket()>> string sending: %s \n", temp_result);
 
 
-   Write(connected_socket, temp_result, strlen(temp_result));
+   Write(connected_socket, temp_result, (strlen(temp_result) + 1));
+   printf("read_temp_write_socket()<< ");
 }
 
 static void  read_temperature_local_internal()
@@ -255,7 +307,7 @@ static void  read_temperature_local_internal()
 
 		read_temperature(value);
 		check_temperature_value(value);
-		sleep(1);
+		sleep(10);
 
 	}
 

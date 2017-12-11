@@ -17,7 +17,8 @@ static char temp_result[512];
 #define STR_SENSOR "Water Tank Temp: "
 
 
-static char* sensor="/sys/bus/w1/drivers/w1_slave_driver/28-04163711deff/w1_slave";
+//static char* sensor="/sys/bus/w1/drivers/w1_slave_driver/28-04163711deff/w1_slave";
+static char* sensor="/sys/bus/w1/drivers/w1_slave_driver/28-0416371170ff/w1_slave";
 static int saved_temperature;
 static char saved_temperature_str[10];
 
